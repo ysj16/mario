@@ -2,7 +2,7 @@
  * Created by Administrator on 2015/6/24.
  */
 (function() {
-    var imageRoot = "/mario/images/"
+    var imageRoot = "../mario/images/"
     var resourceCache = {};
     var loading = [];
     var readyCallbacks = [];

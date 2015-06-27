@@ -1,6 +1,7 @@
 /**
  * Created by yu on 2015/6/24.
  */
+//游戏控制类
 function Control(){
     this.code = { 37: 'left', 39: 'right', 38: 'jump', 40: 'down'}
     this.status = { 'left': false, 'right': false, 'jump': false, 'down': false };
@@ -16,12 +17,20 @@ function Control(){
     }.bind(this))
 
 }
+//游戏地图类
 function Map(img,size){
     this.background = resources.get("background1.png")
     this.x=0;
 }
-function Camera(ctx){
-    this.ctx = ctx;
+Map.prototype.update = function(control,player,canvas){
+    if(control.status.right){
+        if(player.position.x>=canvas.width/2)
+            this.x += player.speedX;
+    }
+}
+//camera类，用于渲染游戏画面
+function Camera(canvas){
+    this.ctx = canvas.getContext("2d");
 }
 Camera.prototype.drawBackground = function(map){
     var canvas = this.ctx.canvas;
@@ -30,51 +39,91 @@ Camera.prototype.drawBackground = function(map){
 }
 Camera.prototype.drawLivings = function(livings){
     var ctx = this.ctx;
-    ctx.save();
     livings.forEach(function(item,index){
         var actImg = item.imgs[item.act];
-        ctx.drawImage(actImg.img,actImg.x,0,60,60,0,0,40,40)
+        var renderW = actImg.renderW||actImg.img.width,
+            renderH = actImg.renderH||actImg.img.height;
+        ctx.drawImage(actImg.img,actImg.x,0,actImg.spiritW,actImg.img.height,item.position.x,0,renderW,renderH)
     })
-    ctx.restore();
 }
-function Livings(imgs,position){
+Camera.prototype.drawModels = function(models,map){
+    var ctx = this.ctx;
+    models.forEach(function(item,index){
+        var actImg = item.imgs[item.act];
+        var renderW = actImg.renderW||actImg.img.width,
+            renderH = actImg.renderH||actImg.img.height;
+        item.position.forEach(function(position,index){
+            for(var i = 0;i<position.width;i++){
+                for(var j=0;j<position.height;j++){
+                    ctx.drawImage(actImg.img,position.x+i*renderW-map.x,position.y+j*renderH,renderW,renderH)
+                }
+            }
+        })
+
+    })
+}
+//模型类
+function Model(imgs,position){
     this.imgs = imgs;
-    this.position= position;
+    this.position = position;
+    this.act = "default";
+}
+//生物类，继承模型类
+function Livings(imgs,position){
+    Model.call(this,imgs,position)
     this.act="moveR";
 }
+inheritPrototype(Model,Livings)
 Livings.prototype.spirit = function(act){
     this.imgs[act].x += this.imgs[act].spiritW;
-    if(this.imgs[act].x==this.imgs[act].width) this.imgs[act].x=0;
+    if(this.imgs[act].x == this.imgs[act].img.width) this.imgs[act].x=0;
 
 }
+Livings.prototype.move = function(x,y){
+    this.position.x += x;
+    this.position.y +=y;
+}
+//玩家类，继承生物类
 function Player(imgs,position){
     Livings.call(this,imgs,position);
     this.lifes = 3;
+    this.speedX = 3;
 }
 inheritPrototype(Player,Livings);
-Player.prototype.update = function(control){
+Player.prototype.update = function(control,canvas){
     if(control.status.left){
-
+        this.act = "moveL";
+        this.move(-this.speedX,0)
+        this.spirit("moveL")
     }
     if(control.status.right){
+        this.act = "moveR";
+        if(this.position.x<canvas.width/2) {
+            this.move(this.speedX, 0)
+        }
         this.spirit("moveR");
     }
 }
+//游戏循环类，用于控制游戏循环
 function GameLoop(callback,fps){
     var fps = fps||60;
     this.callback = callback;
     this.lastTime = 0;
     this.interval = 1000/fps;
 }
-
+GameLoop.prototype.start = function(callback){
+    this.callback = callback
+    requestAnimationFrame(this.frame.bind(this))
+}
 GameLoop.prototype.frame = function(time){
     if(time-this.lastTime>this.interval){
-        this.callback()
+        this.callback(time)
         this.lastTime = time;
     }
     requestAnimationFrame(this.frame.bind(this))
 }
 
+//组合寄生式继承类的原型
 function inheritPrototype(subType,superType){
     var prototype = Object.create(superType.prototype);
     prototype.constructor = subType;
