@@ -25,7 +25,90 @@ function Map(img,size){
 Map.prototype.update = function(control,player,canvas){
     if(control.status.right){
         if(player.position.x>=canvas.width/2)
-            this.x += player.speedX;
+            this.x += player.speed.x;
+    }
+}
+
+//模型类
+function Model(imgs,position){
+    this.imgs = imgs;
+    this.position = position;
+    this.act = "default";
+}
+Model.prototype.alls = [];//画面中需要被检测渲染的所有模型，包括生物，场景
+//生物类，继承模型类
+function Livings(imgs,position){
+    Model.call(this,imgs,position)
+    this.crush = {left:false,right:false,top:false,bottom:false};
+    this.speed = {x:3,y:0};
+    this.act="moveR";
+    this.isLive = true;
+}
+inheritPrototype(Livings,Model)
+Livings.prototype.spirit = function(act){
+    this.imgs[act].x += this.imgs[act].spiritW;
+    if(this.imgs[act].x == this.imgs[act].img.width) this.imgs[act].x=0;
+
+}
+Livings.prototype.move = function(x,y){
+    this.collide();
+    this.position.x += x;
+    this.position.y +=y;
+    console.log(this)
+}
+Livings.prototype.die =function(){
+    this.isLive = false;
+    this.speed({x:0,y:-200})
+}
+Livings.prototype.gravity = function(g,interTime){//添加重力
+    if(this.position.y<CHEIGHT-100){
+        this.move(0,this.speed.y*interTime + g*interTime*interTime/2);
+        this.speed.y += g*interTime;
+    }
+}
+Livings.prototype.collide = function(){//碰撞检测
+    var actImg = this.imgs[this.act],
+        tCenter = {x:this.position.x/2 + actImg.renderW/2,y:this.position.y/2 + actImg.renderH/2},
+        that = this;
+    this.crush = {left:false,right:false,top:false,bottom:false};
+    this.alls.forEach(function(model,index){
+        var actImg = model.imgs[model.act];
+        var mCenter = {x:model.position.x/2 + actImg.renderW/2,y:model.position.y/2 + actImg.renderH/2}
+        if(tCenter.x-mCenter.x>0){
+            that.crush.left = true;
+        }
+        if(tCenter.x-mCenter.x<0){
+            that.crush.right = true;
+        }
+        if(tCenter.y-mCenter.y>0){
+            that.crush.top = true;
+        }
+        if(tCenter.y-mCenter.y<0){
+            that.crush.bottom = true;
+        }
+
+    })
+}
+//玩家类，继承生物类
+function Player(imgs,position){
+    Livings.call(this,imgs,position);
+    this.lifes = 3;
+}
+inheritPrototype(Player,Livings);
+Player.prototype.update = function(control,canvas,interTime){//更新状态
+    this.gravity(100,interTime/1000)
+    //console.log(this.position)
+    if(control.status.left){
+        this.act = "moveL";
+        this.move(-this.speed.x,0)
+        this.spirit("moveL")
+    }
+    if(control.status.right){
+        this.act = "moveR";
+        if(this.position.x<canvas.width/2) {
+            this.move(this.speed.x, 0)
+        }
+        this.spirit("moveR");
     }
 }
 //camera类，用于渲染游戏画面
@@ -43,7 +126,7 @@ Camera.prototype.drawLivings = function(livings){
         var actImg = item.imgs[item.act];
         var renderW = actImg.renderW||actImg.img.width,
             renderH = actImg.renderH||actImg.img.height;
-        ctx.drawImage(actImg.img,actImg.x,0,actImg.spiritW,actImg.img.height,item.position.x,0,renderW,renderH)
+        ctx.drawImage(actImg.img,actImg.x,0,actImg.spiritW,actImg.img.height,item.position.x,item.position.y,renderW,renderH)
     })
 }
 Camera.prototype.drawModels = function(models,map){
@@ -52,57 +135,8 @@ Camera.prototype.drawModels = function(models,map){
         var actImg = item.imgs[item.act];
         var renderW = actImg.renderW||actImg.img.width,
             renderH = actImg.renderH||actImg.img.height;
-        item.position.forEach(function(position,index){
-            for(var i = 0;i<position.width;i++){
-                for(var j=0;j<position.height;j++){
-                    ctx.drawImage(actImg.img,position.x+i*renderW-map.x,position.y+j*renderH,renderW,renderH)
-                }
-            }
-        })
-
+        ctx.drawImage(actImg.img,item.position.x-map.x,item.position.y,renderW,renderH)
     })
-}
-//模型类
-function Model(imgs,position){
-    this.imgs = imgs;
-    this.position = position;
-    this.act = "default";
-}
-//生物类，继承模型类
-function Livings(imgs,position){
-    Model.call(this,imgs,position)
-    this.act="moveR";
-}
-inheritPrototype(Model,Livings)
-Livings.prototype.spirit = function(act){
-    this.imgs[act].x += this.imgs[act].spiritW;
-    if(this.imgs[act].x == this.imgs[act].img.width) this.imgs[act].x=0;
-
-}
-Livings.prototype.move = function(x,y){
-    this.position.x += x;
-    this.position.y +=y;
-}
-//玩家类，继承生物类
-function Player(imgs,position){
-    Livings.call(this,imgs,position);
-    this.lifes = 3;
-    this.speedX = 3;
-}
-inheritPrototype(Player,Livings);
-Player.prototype.update = function(control,canvas){
-    if(control.status.left){
-        this.act = "moveL";
-        this.move(-this.speedX,0)
-        this.spirit("moveL")
-    }
-    if(control.status.right){
-        this.act = "moveR";
-        if(this.position.x<canvas.width/2) {
-            this.move(this.speedX, 0)
-        }
-        this.spirit("moveR");
-    }
 }
 //游戏循环类，用于控制游戏循环
 function GameLoop(callback,fps){
@@ -111,16 +145,29 @@ function GameLoop(callback,fps){
     this.lastTime = 0;
     this.interval = 1000/fps;
 }
-GameLoop.prototype.start = function(callback){
+/*GameLoop.prototype.start = function(callback){
     this.callback = callback
     requestAnimationFrame(this.frame.bind(this))
-}
+}*/
 GameLoop.prototype.frame = function(time){
-    if(time-this.lastTime>this.interval){
-        this.callback(time)
+    var interTime = time - this.lastTime;
+    if(interTime>this.interval){
+        this.callback(interTime)
         this.lastTime = time;
     }
     requestAnimationFrame(this.frame.bind(this))
+}
+
+//获取参与渲染计算的模型
+function getRenderModels(models,map){
+    var arr = [];
+    models.forEach(function(item,index){
+       if(item.position.x-map.x >= -DEFLENGTH && item.position.x-map.x <= CWIDTH){
+           arr.push(item)
+       }
+
+    })
+    return arr;
 }
 
 //组合寄生式继承类的原型
