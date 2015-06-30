@@ -52,7 +52,7 @@ resources.onReady(function(){
     })
     console.log(models)
     //实例化马里奥
-    var player = new Player({moveR:{img:resources.get("marioR.png"),x:0,spiritW:60,renderW:DEFLENGTH,renderH:DEFLENGTH},"moveL":{img:resources.get("marioL.png"),x:0,spiritW:60,renderW:DEFLENGTH,renderH:DEFLENGTH}},{x:0,y:250})
+    var player = new Player({moveR:{img:resources.get("marioR.png"),x:0,spiritW:60,renderW:DEFLENGTH,renderH:DEFLENGTH,crushW:0.8*DEFLENGTH},"moveL":{img:resources.get("marioL.png"),x:0,spiritW:60,renderW:DEFLENGTH,renderH:DEFLENGTH}},{x:0,y:250})
 
     var livings = [];
     livings.push(player);

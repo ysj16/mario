@@ -52,8 +52,14 @@ Livings.prototype.spirit = function(act){
 }
 Livings.prototype.move = function(x,y){
     this.collide();
-    this.position.x += x;
-    this.position.y +=y;
+    if(x>0&&!this.crush.right)
+        this.position.x += x;
+    else if(x<0&&!this.crush.left)
+        this.position.x += x;
+    if(y>0&&!this.crush.bottom)
+        this.position.y +=y;
+    else if(y<0&&!this.crush.top)
+        this.position.y +=y;
     console.log(this)
 }
 Livings.prototype.die =function(){
@@ -67,24 +73,33 @@ Livings.prototype.gravity = function(g,interTime){//添加重力
     }
 }
 Livings.prototype.collide = function(){//碰撞检测
-    var actImg = this.imgs[this.act],
-        tCenter = {x:this.position.x/2 + actImg.renderW/2,y:this.position.y/2 + actImg.renderH/2},
+    var tImg = this.imgs[this.act],
+        tCenter = {x:this.position.x/2 + tImg.renderW/2,y:this.position.y/2 + tImg.renderH/2},
         that = this;
+    var tCrushW = tImg.crushW||tImg.renderW,
+        tCrushH = tImg.crushH||tImg.renderH;
+
     this.crush = {left:false,right:false,top:false,bottom:false};
     this.alls.forEach(function(model,index){
-        var actImg = model.imgs[model.act];
-        var mCenter = {x:model.position.x/2 + actImg.renderW/2,y:model.position.y/2 + actImg.renderH/2}
-        if(tCenter.x-mCenter.x>0){
-            that.crush.left = true;
-        }
-        if(tCenter.x-mCenter.x<0){
-            that.crush.right = true;
-        }
-        if(tCenter.y-mCenter.y>0){
-            that.crush.top = true;
-        }
-        if(tCenter.y-mCenter.y<0){
-            that.crush.bottom = true;
+        var mImg = model.imgs[model.act],
+            mCrushW = mImg.crushW||mImg.renderW,
+            mCrushH = mImg.crushH||mImg.renderH;
+        var mCenter = {x:model.position.x/2 + mImg.renderW/2,y:model.position.y/2 + mImg.renderH/2};
+        if(Math.abs(tCenter.x-mCenter.x) < (tCrushW/2+mCrushW/2)&&Math.abs(tCenter.y-mCenter.y) < (tCrushH/2+mCrushH/2)) {
+            if (tCenter.x - mCenter.x > 0 && tCenter.x - mCenter.x < tCrushW / 2 + mCrushW / 2 && Math.abs(tCenter.y-mCenter.y) < (tCrushH/2+mCrushH/2)) {
+                that.crush.left = true;
+            }
+            if (tCenter.x - mCenter.x < 0 && mCenter.x - tCenter.x < tCrushW / 2 + mCrushW / 2 && Math.abs(tCenter.y-mCenter.y) < (tCrushH/2+mCrushH/2)) {
+                that.crush.right = true;
+            }
+            if (tCenter.y - mCenter.y > 0&&tCenter.y - mCenter.y< tCrushH/2+mCrushH/2 && Math.abs(tCenter.x-mCenter.x) < (tCrushW/2+mCrushW/2))
+            {
+                that.crush.top = true;
+            }
+            if (tCenter.y - mCenter.y < 0 &&mCenter.y - tCenter.y< tCrushH/2+mCrushH/2 && Math.abs(tCenter.x-mCenter.x) < (tCrushW/2+mCrushW/2)) {
+                console.log(tCenter,mCenter,tCrushH,tCrushW)
+                that.crush.bottom = true;
+            }
         }
 
     })
