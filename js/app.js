@@ -8,6 +8,7 @@ resources.load("land1.gif")
 resources.load("land2.gif")
 resources.load("pipe.png")
 resources.load("brick1.gif")
+resources.load("marioJR.gif")
 var DEFLENGTH = 40;//单位长度，以mario的高度为标准
 var CWIDTH = 600;//CANVAS宽度
 var CHEIGHT = 400;//CANVAS高度
@@ -50,9 +51,12 @@ resources.onReady(function(){
             }
         })
     })
-    console.log(models)
     //实例化马里奥
-    var player = new Player({moveR:{img:resources.get("marioR.png"),x:0,spiritW:60,renderW:DEFLENGTH,renderH:DEFLENGTH,crushW:0.8*DEFLENGTH},"moveL":{img:resources.get("marioL.png"),x:0,spiritW:60,renderW:DEFLENGTH,renderH:DEFLENGTH}},{x:0,y:250})
+    var player = new Player({
+        moveR:{img:resources.get("marioR.png"),x:0,spiritW:60,renderW:DEFLENGTH,renderH:DEFLENGTH,crushW:0.8*DEFLENGTH},
+        moveL:{img:resources.get("marioL.png"),x:0,spiritW:60,renderW:DEFLENGTH,renderH:DEFLENGTH},
+        jumpR:{img:resources.get("marioJR.gif"),x:0,renderW:DEFLENGTH,renderH:DEFLENGTH}
+    },{x:0,y:220})
 
     var livings = [];
     livings.push(player);
@@ -60,9 +64,8 @@ resources.onReady(function(){
     var loop = new GameLoop(function(interTime){
         var renderModels = getRenderModels(models,map),
             renderLivings = getRenderModels(livings,map);
-        Model.prototype.alls = Array.concat(renderLivings,renderModels);
-        //console.log(renderLivings,renderModels)
-        player.update(control,canvas,interTime);
+        Model.prototype.alls = Array.prototype.concat(renderLivings,renderModels);
+        player.update(control,canvas,30);
         map.update(control,player,canvas);
         camera.drawBackground(map);
         camera.drawModels(renderModels,map);

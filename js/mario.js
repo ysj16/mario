@@ -60,7 +60,6 @@ Livings.prototype.move = function(x,y){
         this.position.y +=y;
     else if(y<0&&!this.crush.top)
         this.position.y +=y;
-    console.log(this)
 }
 Livings.prototype.die =function(){
     this.isLive = false;
@@ -74,31 +73,30 @@ Livings.prototype.gravity = function(g,interTime){//添加重力
 }
 Livings.prototype.collide = function(){//碰撞检测
     var tImg = this.imgs[this.act],
-        tCenter = {x:this.position.x/2 + tImg.renderW/2,y:this.position.y/2 + tImg.renderH/2},
+        tCenter = {x:this.position.x + tImg.renderW/2,y:this.position.y + tImg.renderH/2},
         that = this;
     var tCrushW = tImg.crushW||tImg.renderW,
         tCrushH = tImg.crushH||tImg.renderH;
-
     this.crush = {left:false,right:false,top:false,bottom:false};
     this.alls.forEach(function(model,index){
-        var mImg = model.imgs[model.act],
-            mCrushW = mImg.crushW||mImg.renderW,
-            mCrushH = mImg.crushH||mImg.renderH;
-        var mCenter = {x:model.position.x/2 + mImg.renderW/2,y:model.position.y/2 + mImg.renderH/2};
-        if(Math.abs(tCenter.x-mCenter.x) < (tCrushW/2+mCrushW/2)&&Math.abs(tCenter.y-mCenter.y) < (tCrushH/2+mCrushH/2)) {
-            if (tCenter.x - mCenter.x > 0 && tCenter.x - mCenter.x < tCrushW / 2 + mCrushW / 2 && Math.abs(tCenter.y-mCenter.y) < (tCrushH/2+mCrushH/2)) {
-                that.crush.left = true;
-            }
-            if (tCenter.x - mCenter.x < 0 && mCenter.x - tCenter.x < tCrushW / 2 + mCrushW / 2 && Math.abs(tCenter.y-mCenter.y) < (tCrushH/2+mCrushH/2)) {
-                that.crush.right = true;
-            }
-            if (tCenter.y - mCenter.y > 0&&tCenter.y - mCenter.y< tCrushH/2+mCrushH/2 && Math.abs(tCenter.x-mCenter.x) < (tCrushW/2+mCrushW/2))
-            {
-                that.crush.top = true;
-            }
-            if (tCenter.y - mCenter.y < 0 &&mCenter.y - tCenter.y< tCrushH/2+mCrushH/2 && Math.abs(tCenter.x-mCenter.x) < (tCrushW/2+mCrushW/2)) {
-                console.log(tCenter,mCenter,tCrushH,tCrushW)
-                that.crush.bottom = true;
+        if(model!==that) {
+            var mImg = model.imgs[model.act],
+                mCrushW = mImg.crushW || mImg.renderW,
+                mCrushH = mImg.crushH || mImg.renderH;
+            var mCenter = {x: model.position.x + mImg.renderW / 2, y: model.position.y + mImg.renderH / 2};
+            if (Math.abs(tCenter.x - mCenter.x) < (tCrushW / 2 + mCrushW / 2) && Math.abs(tCenter.y - mCenter.y) < (tCrushH / 2 + mCrushH / 2)+2) {
+                if (tCenter.x - mCenter.x > 0 && tCenter.x - mCenter.x < tCrushW / 2 + mCrushW / 2 && Math.abs(tCenter.y - mCenter.y) < (tCrushH / 2 + mCrushH / 2)) {
+                    that.crush.left = true;
+                }
+                if (tCenter.x - mCenter.x < 0 && mCenter.x - tCenter.x < tCrushW / 2 + mCrushW / 2 && Math.abs(tCenter.y - mCenter.y) < (tCrushH / 2 + mCrushH / 2)) {
+                    that.crush.right = true;
+                }
+                if (tCenter.y - mCenter.y > 0 && tCenter.y - mCenter.y < tCrushH / 2 + mCrushH / 2 + 2 && Math.abs(tCenter.x - mCenter.x) < (tCrushW / 2 + mCrushW / 2)) {
+                    that.crush.top = true;
+                }
+                if (tCenter.y - mCenter.y < 0 && mCenter.y - tCenter.y < tCrushH / 2 + mCrushH / 2 + 100 && Math.abs(tCenter.x - mCenter.x) < (tCrushW / 2 + mCrushW / 2)) {
+                    that.crush.bottom = true;
+                }
             }
         }
 
@@ -125,6 +123,13 @@ Player.prototype.update = function(control,canvas,interTime){//更新状态
         }
         this.spirit("moveR");
     }
+    if(control.status.jump){
+        this.act = "jumpR";
+        if(this.crush.bottom) {
+            this.speed.y = 50;
+            this.move(0, -this.speed.y)
+        }
+    }
 }
 //camera类，用于渲染游戏画面
 function Camera(canvas){
@@ -140,8 +145,9 @@ Camera.prototype.drawLivings = function(livings){
     livings.forEach(function(item,index){
         var actImg = item.imgs[item.act];
         var renderW = actImg.renderW||actImg.img.width,
-            renderH = actImg.renderH||actImg.img.height;
-        ctx.drawImage(actImg.img,actImg.x,0,actImg.spiritW,actImg.img.height,item.position.x,item.position.y,renderW,renderH)
+            renderH = actImg.renderH||actImg.img.height,
+            spiritW = actImg.spiritW||actImg.img.width;
+        ctx.drawImage(actImg.img,actImg.x,0,spiritW,actImg.img.height,item.position.x,item.position.y,renderW,renderH)
     })
 }
 Camera.prototype.drawModels = function(models,map){
