@@ -22,10 +22,10 @@ function Map(img,size){
     this.background = resources.get("background1.png")
     this.x=0;
 }
-Map.prototype.update = function(control,player,canvas){
+Map.prototype.update = function(control,player,canvas,interTime){
     if(control.status.right){
         if(player.position.x>=canvas.width/2)
-            this.x += player.speed.x;
+            this.x += player.speed.x*interTime/1000;
     }
 }
 
@@ -40,7 +40,7 @@ Model.prototype.alls = [];//画面中需要被检测渲染的所有模型，包�
 function Livings(imgs,position){
     Model.call(this,imgs,position)
     this.crush = {left:false,right:false,top:false,bottom:false};
-    this.speed = {x:3,y:0};
+    this.speed = {x:50,y:0};
     this.act="moveR";
     this.isLive = true;
 }
@@ -51,7 +51,7 @@ Livings.prototype.spirit = function(act){
 
 }
 Livings.prototype.move = function(x,y){
-    this.collide();
+/*    this.collide();
     if(x>0&&!this.crush.right)
         this.position.x += x;
     else if(x<0&&!this.crush.left)
@@ -60,13 +60,14 @@ Livings.prototype.move = function(x,y){
         this.position.y +=y;
     else if(y<0&&!this.crush.top)
         this.position.y +=y;
+    //console.log(this.speed)*/
 }
 Livings.prototype.die =function(){
     this.isLive = false;
     this.speed({x:0,y:-200})
 }
 Livings.prototype.gravity = function(g,interTime){//添加重力
-    if(this.position.y<CHEIGHT-100){
+    if(this.position.y<CHEIGHT-100&&!this.crush.bottom){
         this.move(0,this.speed.y*interTime + g*interTime*interTime/2);
         this.speed.y += g*interTime;
     }
@@ -91,11 +92,15 @@ Livings.prototype.collide = function(){//碰撞检测
                 if (tCenter.x - mCenter.x < 0 && mCenter.x - tCenter.x < tCrushW / 2 + mCrushW / 2 && Math.abs(tCenter.y - mCenter.y) < (tCrushH / 2 + mCrushH / 2)) {
                     that.crush.right = true;
                 }
-                if (tCenter.y - mCenter.y > 0 && tCenter.y - mCenter.y < tCrushH / 2 + mCrushH / 2 + 2 && Math.abs(tCenter.x - mCenter.x) < (tCrushW / 2 + mCrushW / 2)) {
+                if (tCenter.y - mCenter.y > 0 && tCenter.y - mCenter.y < tCrushH / 2 + mCrushH / 2  && Math.abs(tCenter.x - mCenter.x) < (tCrushW / 2 + mCrushW / 2)-12) {
                     that.crush.top = true;
+                    that.speed.y = 0;
+                    that.position.y +=1;
                 }
-                if (tCenter.y - mCenter.y < 0 && mCenter.y - tCenter.y < tCrushH / 2 + mCrushH / 2 + 100 && Math.abs(tCenter.x - mCenter.x) < (tCrushW / 2 + mCrushW / 2)) {
+                if (tCenter.y - mCenter.y < 0 && mCenter.y - tCenter.y < tCrushH / 2 + mCrushH / 2+2 && Math.abs(tCenter.x - mCenter.x) < (tCrushW / 2 + mCrushW / 2)-12) {
                     that.crush.bottom = true;
+                    that.speed.y = 0;
+                    that.position.y = model.position.y-tImg.renderH;//修正碰撞之后物体的位置
                 }
             }
         }
@@ -108,28 +113,71 @@ function Player(imgs,position){
     this.lifes = 3;
 }
 inheritPrototype(Player,Livings);
+Player.prototype.move = function(x,y){
+    this.collide();
+    if(x>0&&!this.crush.right)
+        this.position.x += x;
+    else if(x<0&&!this.crush.left)
+        this.position.x += x;
+    if(y>0&&!this.crush.bottom)
+        this.position.y +=y;
+    else if(y<0&&!this.crush.top)
+        this.position.y +=y;
+    //console.log(this.speed)
+}
 Player.prototype.update = function(control,canvas,interTime){//更新状态
-    this.gravity(100,interTime/1000)
     //console.log(this.position)
+    var moveX=0,moveY=0;
     if(control.status.left){
+        moveX = -this.speed.x * interTime / 1000;
         this.act = "moveL";
-        this.move(-this.speed.x,0)
         this.spirit("moveL")
     }
     if(control.status.right){
-        this.act = "moveR";
-        if(this.position.x<canvas.width/2) {
-            this.move(this.speed.x, 0)
+        if (this.position.x < canvas.width / 2) {
+            moveX = this.speed.x * interTime / 1000;
+            this.act = "moveR";
+            this.spirit("moveR");
         }
-        this.spirit("moveR");
     }
     if(control.status.jump){
         this.act = "jumpR";
-        if(this.crush.bottom) {
-            this.speed.y = 50;
-            this.move(0, -this.speed.y)
+        this.speed.y = -128;
+        moveY =this.speed.y*interTime/1000;
+    }
+/*    if(control.status.left){
+        moveX = -this.speed.x * interTime / 1000;
+        if(this.act!="jumpR"&&this.act!="jumpL") {
+            this.act = "moveL";
+            this.spirit("moveL")
+        }else{
+            this.act = "jumpL";
         }
     }
+    if(control.status.right){
+        if (this.position.x < canvas.width / 2) {
+            moveX = this.speed.x * interTime / 1000;
+        }
+        if(this.act!="jumpR"&&this.act!="jumpL") {
+            this.act = "moveR";
+            this.spirit("moveR");
+        }else{
+            this.act = "jumpR";
+        }
+    }
+    if(control.status.jump){
+        this.act = "jump"+this.act.slice(-1);
+        if(control.status.right) this.act = "jumpR";
+        else if(control.status.left||this.act=="jumpL") this.act = "jumpL";
+        if(this.crush.bottom) {
+            this.speed.y = -128;
+            moveY =this.speed.y*interTime/1000;
+        }
+    }
+    if(this.crush.bottom&&this.act.slice(-1)=="R") this.act="moveR"
+    else if(this.crush.bottom&&this.act.slice(-1)=="L") this.act = "moveL";*/
+    this.move(moveX, moveY)
+    this.gravity(100, interTime / 1000)
 }
 //camera类，用于渲染游戏画面
 function Camera(canvas){

@@ -9,6 +9,9 @@ resources.load("land2.gif")
 resources.load("pipe.png")
 resources.load("brick1.gif")
 resources.load("marioJR.gif")
+resources.load("marioJL.gif")
+resources.load("monster.png")
+resources.load("monsterD.gif")
 var DEFLENGTH = 40;//单位长度，以mario的高度为标准
 var CWIDTH = 600;//CANVAS宽度
 var CHEIGHT = 400;//CANVAS高度
@@ -55,7 +58,8 @@ resources.onReady(function(){
     var player = new Player({
         moveR:{img:resources.get("marioR.png"),x:0,spiritW:60,renderW:DEFLENGTH,renderH:DEFLENGTH,crushW:0.8*DEFLENGTH},
         moveL:{img:resources.get("marioL.png"),x:0,spiritW:60,renderW:DEFLENGTH,renderH:DEFLENGTH},
-        jumpR:{img:resources.get("marioJR.gif"),x:0,renderW:DEFLENGTH,renderH:DEFLENGTH}
+        jumpR:{img:resources.get("marioJR.gif"),x:0,renderW:DEFLENGTH,renderH:DEFLENGTH},
+        jumpL:{img:resources.get("marioJL.gif"),x:0,renderW:DEFLENGTH,renderH:DEFLENGTH}
     },{x:0,y:220})
 
     var livings = [];
@@ -66,11 +70,11 @@ resources.onReady(function(){
             renderLivings = getRenderModels(livings,map);
         Model.prototype.alls = Array.prototype.concat(renderLivings,renderModels);
         player.update(control,canvas,30);
-        map.update(control,player,canvas);
+        map.update(control,player,canvas,30);
         camera.drawBackground(map);
         camera.drawModels(renderModels,map);
         camera.drawLivings(renderLivings,40,40);
-    },30)
+    },60)
     loop.frame()
 
 })
