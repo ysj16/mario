@@ -24,7 +24,7 @@ function Map(img,size){
 }
 Map.prototype.update = function(control,player,canvas,interTime){
     if(control.status.right){
-        if(player.position.x>=canvas.width/2)
+        if(player.position.x-this.x>=canvas.width/2)
             this.x += player.speed.x*interTime/1000;
     }
 }
@@ -36,13 +36,14 @@ function Model(imgs,position){
     this.act = "default";
 }
 Model.prototype.alls = [];//画面中需要被检测渲染的所有模型，包括生物，场景
+Model.prototype.map;//所在的地图
 //生物类，继承模型类
 function Livings(imgs,position){
     Model.call(this,imgs,position)
     this.crush = {left:false,right:false,top:false,bottom:false};
     this.speed = {x:50,y:0};
-    this.act="moveR";
-    this.isLive = true;
+    this.act="default";
+    this.isAlive = true;
 }
 inheritPrototype(Livings,Model)
 Livings.prototype.spirit = function(act){
@@ -51,7 +52,7 @@ Livings.prototype.spirit = function(act){
 
 }
 Livings.prototype.move = function(x,y){
-/*    this.collide();
+    this.collide(this.onCrush);
     if(x>0&&!this.crush.right)
         this.position.x += x;
     else if(x<0&&!this.crush.left)
@@ -60,19 +61,28 @@ Livings.prototype.move = function(x,y){
         this.position.y +=y;
     else if(y<0&&!this.crush.top)
         this.position.y +=y;
-    //console.log(this.speed)*/
+    //console.log(this.speed)
+}
+Livings.prototype.autoMove = function(interTime){
+    this.speed.x = -20;
+    this.move(-20*interTime/1000,0)
+}
+Livings.prototype.onCrush = function(){
+    console.log(this)
 }
 Livings.prototype.die =function(){
-    this.isLive = false;
-    this.speed({x:0,y:-200})
+    if(this.isAlive) {
+        this.isAlive = false;
+        this.speed = {x: 0, y: -200};
+    }
 }
 Livings.prototype.gravity = function(g,interTime){//添加重力
-    if(this.position.y<CHEIGHT-100&&!this.crush.bottom){
+    if(this.position.y<CHEIGHT+100&&!this.crush.bottom){
         this.move(0,this.speed.y*interTime + g*interTime*interTime/2);
         this.speed.y += g*interTime;
     }
 }
-Livings.prototype.collide = function(){//碰撞检测
+Livings.prototype.collide = function(callback){//碰撞检测
     var tImg = this.imgs[this.act],
         tCenter = {x:this.position.x + tImg.renderW/2,y:this.position.y + tImg.renderH/2},
         that = this;
@@ -102,6 +112,8 @@ Livings.prototype.collide = function(){//碰撞检测
                     that.speed.y = 0;
                     that.position.y = model.position.y-tImg.renderH;//修正碰撞之后物体的位置
                 }
+                //callback&&callback();
+                that.onCrush&&that.onCrush();
             }
         }
 
@@ -111,73 +123,45 @@ Livings.prototype.collide = function(){//碰撞检测
 function Player(imgs,position){
     Livings.call(this,imgs,position);
     this.lifes = 3;
+    this.act="moveR";
 }
 inheritPrototype(Player,Livings);
-Player.prototype.move = function(x,y){
-    this.collide();
-    if(x>0&&!this.crush.right)
-        this.position.x += x;
-    else if(x<0&&!this.crush.left)
-        this.position.x += x;
-    if(y>0&&!this.crush.bottom)
-        this.position.y +=y;
-    else if(y<0&&!this.crush.top)
-        this.position.y +=y;
-    //console.log(this.speed)
-}
+
 Player.prototype.update = function(control,canvas,interTime){//更新状态
     //console.log(this.position)
-    var moveX=0,moveY=0;
+    var moveX=0,moveY= 0,direction = this.act.slice(-1);
+    //控制左右行走，跳跃
     if(control.status.left){
         moveX = -this.speed.x * interTime / 1000;
-        this.act = "moveL";
-        this.spirit("moveL")
+        direction = "L";
+        this.spirit("move"+direction)
     }
     if(control.status.right){
-        if (this.position.x < canvas.width / 2) {
+        if (this.position.x-this.map.x < canvas.width / 2) {
             moveX = this.speed.x * interTime / 1000;
-            this.act = "moveR";
-            this.spirit("moveR");
+            direction = "R";
         }
+        this.spirit("move"+direction)
     }
     if(control.status.jump){
-        this.act = "jumpR";
-        this.speed.y = -128;
-        moveY =this.speed.y*interTime/1000;
-    }
-/*    if(control.status.left){
-        moveX = -this.speed.x * interTime / 1000;
-        if(this.act!="jumpR"&&this.act!="jumpL") {
-            this.act = "moveL";
-            this.spirit("moveL")
-        }else{
-            this.act = "jumpL";
-        }
-    }
-    if(control.status.right){
-        if (this.position.x < canvas.width / 2) {
-            moveX = this.speed.x * interTime / 1000;
-        }
-        if(this.act!="jumpR"&&this.act!="jumpL") {
-            this.act = "moveR";
-            this.spirit("moveR");
-        }else{
-            this.act = "jumpR";
-        }
-    }
-    if(control.status.jump){
-        this.act = "jump"+this.act.slice(-1);
-        if(control.status.right) this.act = "jumpR";
-        else if(control.status.left||this.act=="jumpL") this.act = "jumpL";
         if(this.crush.bottom) {
             this.speed.y = -128;
-            moveY =this.speed.y*interTime/1000;
+            moveY = this.speed.y * interTime / 1000;
         }
     }
-    if(this.crush.bottom&&this.act.slice(-1)=="R") this.act="moveR"
-    else if(this.crush.bottom&&this.act.slice(-1)=="L") this.act = "moveL";*/
+    if(this.crush.bottom){
+        this.act = "move"+direction;
+    }
+    else{
+        this.act = "jump"+direction;
+    }
+
     this.move(moveX, moveY)
     this.gravity(100, interTime / 1000)
+    if(this.position.y>CHEIGHT){
+        this.die();
+    }
+    //console.log(this.position)
 }
 //camera类，用于渲染游戏画面
 function Camera(canvas){
@@ -188,14 +172,15 @@ Camera.prototype.drawBackground = function(map){
     this.ctx.drawImage(map.background,0,0,709,600,-(map.x%canvas.width),0,canvas.width,canvas.height)
     this.ctx.drawImage(map.background,0,0,709,600,canvas.width-(map.x%canvas.width),0,canvas.width,canvas.height)
 }
-Camera.prototype.drawLivings = function(livings){
+Camera.prototype.drawLivings = function(livings,map){
     var ctx = this.ctx;
     livings.forEach(function(item,index){
         var actImg = item.imgs[item.act];
         var renderW = actImg.renderW||actImg.img.width,
             renderH = actImg.renderH||actImg.img.height,
             spiritW = actImg.spiritW||actImg.img.width;
-        ctx.drawImage(actImg.img,actImg.x,0,spiritW,actImg.img.height,item.position.x,item.position.y,renderW,renderH)
+        //console.log(actImg.img,actImg.x,0,spiritW,actImg.img.height,item.position.x,item.position.y,renderW,renderH)
+        ctx.drawImage(actImg.img,actImg.x,0,spiritW,actImg.img.height,item.position.x-map.x,item.position.y,renderW,renderH)
     })
 }
 Camera.prototype.drawModels = function(models,map){
