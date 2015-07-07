@@ -1,17 +1,7 @@
 /**
  * Created by yu on 2015/6/24.
  */
-resources.load("background1.png")
-resources.load("marioR.png")
-resources.load("marioL.png")
-resources.load("land1.gif")
-resources.load("land2.gif")
-resources.load("pipe.png")
-resources.load("brick1.gif")
-resources.load("marioJR.gif")
-resources.load("marioJL.gif")
-resources.load("monster.png")
-resources.load("monsterD.gif")
+resources.load(["background1.png","marioR.png","marioL.png","land1.gif","land2.gif","pipe.png","brick1.gif","marioJR.gif","marioJL.gif","monster.png","monsterD.gif"])
 var DEFLENGTH = 40;//单位长度，以mario的高度为标准
 var CWIDTH = 600;//CANVAS宽度
 var CHEIGHT = 400;//CANVAS高度
@@ -26,29 +16,34 @@ resources.onReady(function(){
         imgs:{
             default:{img:resources.get("land1.gif"),x:0,renderW:DEFLENGTH,renderH:DEFLENGTH}
         },
-        position:[{x:0,y:360,width:10,height:1},{x:450,y:360,width:5,height:1},{x:700,y:360,width:5,height:1}]
+        position:[{x:0,y:360,width:12,height:1},{x:550,y:360,width:15,height:1},{x:1300,y:360,width:15,height:1}]
     },{
         imgs:{
             default:{img:resources.get("land2.gif"),x:0,renderW:DEFLENGTH,renderH:DEFLENGTH}
         },
-        position:[{x:0,y:320,width:10,height:1},{x:450,y:320,width:5,height:1},{x:700,y:320,width:5,height:1}]
+        position:[{x:0,y:320,width:12,height:1},{x:550,y:320,width:15,height:1},{x:1300,y:320,width:15,height:1}]
+    },{
+        imgs:{
+            default:{img:resources.get("land1.gif"),x:0,renderW:0.6*DEFLENGTH,renderH:0.6*DEFLENGTH}
+        },
+        position:[{x:450,y:296,width:1,height:1}]
     },{
         imgs:{
             default:{img:resources.get("pipe.png"),x:0,renderW:DEFLENGTH,renderH:1.5*DEFLENGTH}
         },
-        position:[{x:100,y:400 -3.5*DEFLENGTH}]
+        position:[{x:430,y:400 -3.5*DEFLENGTH},{x:700,y:400-3.5*DEFLENGTH}]
     },{
         imgs:{
-            default:{img:resources.get("brick1.gif"),x:0,renderW:0.7*DEFLENGTH,renderH:0.7*DEFLENGTH}
+            default:{img:resources.get("brick1.gif"),x:0,renderW:0.6*DEFLENGTH,renderH:0.6*DEFLENGTH}
         },
-        position:[{x:100,y:CHEIGHT-4*DEFLENGTH,width:5,height:1}]
+        position:[{x:200,y:CHEIGHT-4*DEFLENGTH,width:5,height:1},{x:1225,y:180},{x:1450,y:150,width:7,height:1}]
     }]
     var livingsData = [{
         imgs:{
             default:{img:resources.get("monster.png"),x:0,spiritW:60,renderW:0.8*DEFLENGTH,renderH:0.8*DEFLENGTH},
-            die:{img:resources.get("monsterD.gif"),x:0,spiritW:60,renderW:0.8*DEFLENGTH,renderH:0.8*DEFLENGTH}
+            die:{img:resources.get("monsterD.gif"),x:0,spiritW:60,renderW:0.8*DEFLENGTH,renderH:0.8*DEFLENGTH,crushH:0.1*DEFLENGTH}
         },
-        position:[{x:200,y:290},{x:300,y:290}]
+        position:[{x:200,y:290},{x:300,y:290},{x:650,y:290}]
     }]
     var models = [];
     var livings = [];
@@ -78,8 +73,17 @@ resources.onReady(function(){
         moveL:{img:resources.get("marioL.png"),x:0,spiritW:60,renderW:DEFLENGTH,renderH:DEFLENGTH,crushW:0.7*DEFLENGTH},
         jumpR:{img:resources.get("marioJR.gif"),x:0,renderW:DEFLENGTH,renderH:DEFLENGTH},
         jumpL:{img:resources.get("marioJL.gif"),x:0,renderW:DEFLENGTH,renderH:DEFLENGTH}
-    },{x:0,y:220})
-    window.player = player;
+    },{x:0,y:220},{onCrush:onCrush})
+    function onCrush(model){
+        if(model.constructor==Livings&&model.crush.top){
+            model.die();
+            var index = livings.indexOf(model);
+            livings.splice(index,1)
+        }else if(model.constructor==Livings){
+            this.die();
+
+        }
+    }
 
     //livings.push(player);
     var loop = new GameLoop(function(interTime){
@@ -95,7 +99,7 @@ resources.onReady(function(){
         camera.drawBackground(map);
         camera.drawModels(renderModels,map);
         camera.drawLivings(renderLivings,map);
-    },60)
+    },30)
     loop.frame()
 
 })
