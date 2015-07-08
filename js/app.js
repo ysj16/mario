@@ -16,17 +16,22 @@ resources.onReady(function(){
         imgs:{
             default:{img:resources.get("land1.gif"),x:0,renderW:DEFLENGTH,renderH:DEFLENGTH}
         },
-        position:[{x:0,y:360,width:12,height:1},{x:550,y:360,width:15,height:1},{x:1300,y:360,width:15,height:1}]
+        position:[{x:0,y:360,width:12,height:1},{x:550,y:360,width:15,height:1},{x:1400,y:360,width:15,height:1}]
     },{
         imgs:{
             default:{img:resources.get("land2.gif"),x:0,renderW:DEFLENGTH,renderH:DEFLENGTH}
         },
-        position:[{x:0,y:320,width:12,height:1},{x:550,y:320,width:15,height:1},{x:1300,y:320,width:15,height:1}]
+        position:[{x:0,y:320,width:12,height:1},{x:550,y:320,width:15,height:1},{x:1400,y:320,width:15,height:1}]
     },{
         imgs:{
             default:{img:resources.get("land1.gif"),x:0,renderW:0.6*DEFLENGTH,renderH:0.6*DEFLENGTH}
         },
-        position:[{x:450,y:296,width:1,height:1}]
+        position:[{x:1054,y:296,width:4,height:1},{x:1078,y:272,width:3,height:1},{x:1102,y:248,width:2,height:1},{x:1126,y:224,width:1,height:1}]
+    },{
+        imgs:{
+            default:{img:resources.get("land2.gif"),x:0,renderW:0.6*DEFLENGTH,renderH:0.6*DEFLENGTH}
+        },
+        position:[{x:1030,y:296},{x:1054,y:272},{x:1078,y:248},{x:1102,y:224},{x:1126,y:200}]
     },{
         imgs:{
             default:{img:resources.get("pipe.png"),x:0,renderW:DEFLENGTH,renderH:1.5*DEFLENGTH}
@@ -43,7 +48,7 @@ resources.onReady(function(){
             default:{img:resources.get("monster.png"),x:0,spiritW:60,renderW:0.8*DEFLENGTH,renderH:0.8*DEFLENGTH},
             die:{img:resources.get("monsterD.gif"),x:0,spiritW:60,renderW:0.8*DEFLENGTH,renderH:0.8*DEFLENGTH,crushH:0.1*DEFLENGTH}
         },
-        position:[{x:200,y:290},{x:300,y:290},{x:650,y:290}]
+        position:[{x:200,y:290},{x:300,y:290},{x:650,y:290},{x:1110,y:160},{x:1550,y:110}]
     }]
     var models = [];
     var livings = [];
@@ -84,22 +89,25 @@ resources.onReady(function(){
 
         }
     }
+    window.map=map;
 
     //livings.push(player);
     var loop = new GameLoop(function(interTime){
+        var frameTime = 30;//每帧对应的时间
         var renderModels = getRenderModels(models,map),
             renderLivings = getRenderModels(livings,map);
         renderLivings.forEach(function(living,item){
-            living.autoMove(30);
+            living.autoMove(frameTime);
         })
         renderLivings.push(player)
         Model.prototype.alls = Array.prototype.concat(renderLivings,renderModels);
-        player.update(control,canvas,30);
-        map.update(control,player,canvas,30);
+        player.update(control,canvas,frameTime,loop);
+        map.update(control,player,canvas,frameTime);
         camera.drawBackground(map);
         camera.drawModels(renderModels,map);
         camera.drawLivings(renderLivings,map);
-    },30)
+        camera.drawGameInfos(loop.info);
+    },30)//30fps
     loop.frame()
 
 })

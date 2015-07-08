@@ -31,7 +31,7 @@ Map.prototype.update = function(control,player,canvas,interTime){
 
 //模型类
 function Model(imgs,position){
-    this.imgs = imgs;
+    this.imgs = deepClone(imgs);
     this.position = position;
     this.act = "default";
 }
@@ -48,7 +48,6 @@ function Livings(imgs,position){
 inheritPrototype(Livings,Model)
 Livings.prototype.spirit = function(act){
     this.imgs[act].x += this.imgs[act].spiritW;
-    console.log(this.imgs[act].x)
     if(this.imgs[act].x == this.imgs[act].img.width) this.imgs[act].x=0;
 
 }
@@ -68,6 +67,7 @@ Livings.prototype.autoMove = function(interTime){
     //if(this.crush.left) this.speed.x = -this.speed.x;
     this.move(this.speed.x*interTime/1000,0);
     this.spirit("default");
+    this.gravity(400, interTime / 1000)
     //console.log(this.imgs["default"])
 }
 Livings.prototype.die =function(){
@@ -135,8 +135,8 @@ Player.prototype.die =function(){
         this.speed = {x: 0, y: -400};
     }
 }
-Player.prototype.update = function(control,canvas,interTime){//更新状态
-    var moveX=0,moveY= 0,direction = this.act.slice(-1);
+Player.prototype.update = function(control,canvas,interTime,loop){//更新状态
+    var moveX=0,moveY= 0,direction = this.act.slice(-1),ctx = canvas.getContext("2d");
     //控制左右行走，跳跃
     if(control.status.left){
         moveX = -this.speed.x * interTime / 1000;
@@ -167,6 +167,9 @@ Player.prototype.update = function(control,canvas,interTime){//更新状态
     this.gravity(400, interTime / 1000)
     if(this.position.y>CHEIGHT){
         this.die();
+    }
+    if(!this.isAlive){
+        loop.info.gameover=true;
     }
     //console.log(this.position)
 }
@@ -199,12 +202,21 @@ Camera.prototype.drawModels = function(models,map){
         ctx.drawImage(actImg.img,item.position.x-map.x,item.position.y,renderW,renderH)
     })
 }
+Camera.prototype.drawGameInfos = function(infos){
+    var ctx = this.ctx;
+    if(infos.gameover){
+        ctx.font = "30px Arial";
+        ctx.fillStyle="#f00";
+        ctx.fillText('Game Over',230,180);
+    }
+}
 //游戏循环类，用于控制游戏循环
 function GameLoop(callback,fps){
     var fps = fps||60;
     this.callback = callback;
     this.lastTime = 0;
     this.interval = 1000/fps;
+    this.info = {};
 }
 /*GameLoop.prototype.start = function(callback){
     this.callback = callback
@@ -236,4 +248,16 @@ function inheritPrototype(subType,superType){
     var prototype = Object.create(superType.prototype);
     prototype.constructor = subType;
     subType.prototype = prototype;
+}
+//对象深复制
+function deepClone(obj){
+    var clone = obj.constructor==Object?{}:[];
+    for(var i in obj){
+        if(obj[i].constructor == Object||obj[i].constructor == Array){
+            clone[i] = deepClone(obj[i]);
+        }else{
+            clone[i] = obj[i]
+        }
+    }
+    return clone;
 }
