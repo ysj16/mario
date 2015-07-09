@@ -41,7 +41,7 @@ resources.onReady(function(){
         imgs:{
             default:{img:resources.get("brick1.gif"),x:0,renderW:0.6*DEFLENGTH,renderH:0.6*DEFLENGTH}
         },
-        position:[{x:200,y:CHEIGHT-4*DEFLENGTH,width:5,height:1},{x:1225,y:180},{x:1450,y:150,width:7,height:1}]
+        position:[{x:200,y:CHEIGHT-4*DEFLENGTH,width:5,height:1},{x:1250,y:180},{x:1450,y:150,width:7,height:1}]
     }]
     var livingsData = [{
         imgs:{
