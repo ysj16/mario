@@ -1,11 +1,11 @@
 /**
  * Created by yu on 2015/6/24.
  */
-resources.load(["background1.png","marioR.png","marioL.png","land1.gif","land2.gif","pipe.png","brick1.gif","marioJR.gif","marioJL.gif","monster.png","monsterD.gif"])
 var DEFLENGTH = 40;//单位长度，以mario的高度为标准
 var CWIDTH = 600;//CANVAS宽度
 var CHEIGHT = 400;//CANVAS高度
 
+resources.load(["background1.png","marioR.png","marioL.png","land1.gif","land2.gif","pipe.png","brick1.gif","marioJR.gif","marioJL.gif","monster.png","monsterD.gif"])
 resources.onReady(function(){
     var canvas = document.getElementById("stage");
     var map = new Map();

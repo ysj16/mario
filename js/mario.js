@@ -218,10 +218,7 @@ function GameLoop(callback,fps){
     this.interval = 1000/fps;
     this.info = {};
 }
-/*GameLoop.prototype.start = function(callback){
-    this.callback = callback
-    requestAnimationFrame(this.frame.bind(this))
-}*/
+
 GameLoop.prototype.frame = function(time){
     var interTime = time - this.lastTime;
     if(interTime>this.interval){
